@@ -34,7 +34,7 @@
   id="{{elementIds.InputSetTo}}"
   type="number" min=0
   value="{{initialCounterState.count}}"
-  (input)="inputSetTo.next(getInputValue($event))"/>
+  (input)="inputSetTo.next($event)"/>
 
 <button type="button"
   id="{{elementIds.BtnReset}}">

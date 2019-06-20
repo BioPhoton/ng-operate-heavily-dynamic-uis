@@ -1,28 +1,10 @@
 import {Component, OnDestroy} from '@angular/core';
-import {merge, NEVER, Subject, Subscription, timer} from 'rxjs';
-import {mapTo, scan, switchMap, withLatestFrom} from 'rxjs/operators';
-
-interface CounterState {
-  isTicking: boolean;
-  count: number;
-  countUp: boolean;
-  tickSpeed: number;
-  countDiff: number;
-}
-
-enum ElementIds {
-  TimerDisplay = 'timer-display',
-  BtnStart = 'btn-start',
-  BtnPause = 'btn-pause',
-  BtnUp = 'btn-up',
-  BtnDown = 'btn-down',
-  BtnReset = 'btn-reset',
-  BtnSetTo = 'btn-set-to',
-  InputSetTo = 'input-set-to',
-  InputTickSpeed = 'input-tick-speed',
-  InputCountDiff = 'input-count-diff'
-}
-
+import {merge, NEVER, Subject, timer} from 'rxjs';
+import {map, mapTo, switchMap, takeUntil, tap, withLatestFrom} from 'rxjs/operators';
+import {CounterState} from '../counter-state.interface';
+import {ElementIds} from '../element-ids.enum';
+import {INITIAL_COUNTER_STATE} from '../initial-counter-state';
+import {inputToValue} from '../operators/inputToValue';
 
 @Component({
   selector: 'app-counter',
@@ -30,61 +12,67 @@ enum ElementIds {
   styleUrls: ['./counter.component.scss']
 })
 export class CounterComponent implements OnDestroy {
+
+  // = CONSTANTS ============================================================
   elementIds = ElementIds;
+  initialCounterState: CounterState = INITIAL_COUNTER_STATE;
+  ngOnDestroySubject = new Subject();
 
-  initialCounterState: CounterState = {
-    isTicking: false,
-    count: 0,
-    countUp: true,
-    tickSpeed: 200,
-    countDiff: 1
-  };
-
+  // = BASE OBSERVABLES  ====================================================
+  // == SOURCE OBSERVABLES ==================================================
+  // === STATE OBSERVABLES ==================================================
+  // === INTERACTION OBSERVABLES ============================================
   btnStart: Subject<Event> = new Subject<Event>();
   btnPause: Subject<Event> = new Subject<Event>();
   btnSetTo: Subject<Event> = new Subject<Event>();
   inputSetTo: Subject<number> = new Subject<number>();
 
-  lastSetToFromButtonClick = this.btnSetTo.pipe(withLatestFrom(this.inputSetTo, (btnSetTo, inputSetTo) => {
-    return inputSetTo;
-  }));
+  // == INTERMEDIATE OBSERVABLES ============================================
+  lastSetToFromButtonClick = this.btnSetTo
+    .pipe(
+      withLatestFrom(
+        this.inputSetTo.pipe(inputToValue()),
+        (btnSetTo, inputSetTo) => {
+          return inputSetTo;
+        }));
 
-  subscriptions: Subscription[] = [];
+  // = SIDE EFFECTS =========================================================
   count = 0;
-
-  constructor() {
-    this.subscriptions.push(merge(
-      this.btnStart.pipe(mapTo(true)),
-      this.btnPause.pipe(mapTo(false))
-      )
-        .pipe(
-          switchMap((isTicking) => {
-            return isTicking ? timer(0, this.initialCounterState.tickSpeed) : NEVER;
-          })
-        )
-        .subscribe(
-          (next) => {
-            this.count = this.count + this.initialCounterState.countDiff;
-          }
-        )
+  updateCounterFromTick = merge(
+    this.btnStart.pipe(mapTo(true)),
+    this.btnPause.pipe(mapTo(false))
+  )
+    .pipe(
+      switchMap((isTicking) => {
+        return isTicking ? timer(0, this.initialCounterState.tickSpeed) : NEVER;
+      }),
+      tap((_) => {
+        this.count = this.count + this.initialCounterState.countDiff;
+      })
     );
 
-    this.subscriptions
-      .push(this.lastSetToFromButtonClick
-        .subscribe((next) => {
-          this.count = next;
-        })
-      );
+  setCountFromSetToClick = this.lastSetToFromButtonClick.pipe(
+    tap((next) => {
+      this.count = next;
+    })
+  );
+
+  constructor() {
+    // = SUBSCRIPTION =========================================================
+    merge(
+      this.updateCounterFromTick,
+      this.setCountFromSetToClick
+    )
+      .pipe(
+        takeUntil(
+          this.ngOnDestroySubject.asObservable()
+        )
+      )
+      .subscribe();
   }
 
   ngOnDestroy(): void {
-    this.subscriptions.forEach((subscription) => {
-      subscription.unsubscribe();
-    });
-  }
-
-  getInputValue = (event: HTMLInputElement): number => {
-    return parseInt(event['target'].value, 10);
+    this.ngOnDestroySubject.next(true);
   }
 
 }
