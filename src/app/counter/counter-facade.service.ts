@@ -1,9 +1,11 @@
 import {Injectable, OnDestroy} from '@angular/core';
-import {merge, NEVER, Observable, Subject, timer} from 'rxjs';
+import {combineLatest, merge, NEVER, Observable, Subject, timer} from 'rxjs';
 import {map, mapTo, scan, shareReplay, startWith, switchMap, takeUntil, tap, withLatestFrom} from 'rxjs/operators';
+import {CounterStateKeys} from '../counter-state-keys.enum';
 import {CounterState} from '../counter-state.interface';
 import {INITIAL_COUNTER_STATE} from '../initial-counter-state';
 import {inputToValue} from '../operators/inputToValue';
+import {selectDistinctState} from '../operators/selectDistinctState';
 import {Command} from './command.interface';
 
 @Injectable({
@@ -33,10 +35,12 @@ export class CounterFacadeService implements OnDestroy {
         }));
 
   // === STATE OBSERVABLES ==================================================
+  programmaticCommandSubject: Subject<Command> = new Subject();
   counterCommands: Observable<Command> = merge(
     this.btnStart.pipe(mapTo({isTicking: true})),
     this.btnPause.pipe(mapTo({isTicking: false})),
-    this.lastSetToFromButtonClick.pipe(map(n => ({count: n})))
+    this.lastSetToFromButtonClick.pipe(map(n => ({count: n}))),
+    this.programmaticCommandSubject.asObservable()
   );
   counterState: Observable<CounterState> = this.counterCommands
     .pipe(
@@ -48,16 +52,22 @@ export class CounterFacadeService implements OnDestroy {
   // == INTERMEDIATE OBSERVABLES ============================================
 
   // = SIDE EFFECTS =========================================================
-  updateCounterFromTick = merge(
-    this.btnStart.pipe(mapTo(true)),
-    this.btnPause.pipe(mapTo(false))
-  )
+  isTicking$ = this.counterState.pipe(selectDistinctState<CounterState, boolean>(CounterStateKeys.isTicking));
+
+  intervalTick$ =  this.isTicking$
     .pipe(
       switchMap((isTicking) => {
         return isTicking ? timer(0, this.initialCounterState.tickSpeed) : NEVER;
-      }),
-      tap((_) => {
-        this.counterStateOld = {...this.counterStateOld, count: this.counterStateOld.count + this.initialCounterState.countDiff};
+      })
+    );
+
+  // = SIDE EFFECTS =========================================================
+  // == BACKGROUND PROCESSES
+  updateCounterFromTick = this.intervalTick$
+    .pipe(
+      withLatestFrom(this.counterState, (_, s) => s),
+      tap((state) => {
+        this.programmaticCommandSubject.next({ count: state.count + state.countDiff });
       })
     );
 
@@ -65,7 +75,7 @@ export class CounterFacadeService implements OnDestroy {
 
     // = SUBSCRIPTION =========================================================
     merge(
-      // this.updateCounterFromTick,
+      this.updateCounterFromTick,
     )
       .pipe(
         takeUntil(
