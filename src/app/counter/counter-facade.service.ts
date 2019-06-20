@@ -27,6 +27,7 @@ export class CounterFacadeService implements OnDestroy {
   btnSetTo: Subject<Event> = new Subject<Event>();
   inputSetTo: Subject<any> = new Subject<any>();
   inputTickSpeed: Subject<Event> = new Subject<Event>();
+  inputCountDiff: Subject<Event> = new Subject<Event>();
 
   lastSetToFromButtonClick = this.btnSetTo
     .pipe(
@@ -45,6 +46,7 @@ export class CounterFacadeService implements OnDestroy {
     this.btnUp.pipe(mapTo({ countUp: true })),
     this.btnDown.pipe(mapTo({ countUp: false })),
     this.inputTickSpeed.pipe(inputToValue(), map(n => ({ tickSpeed: n }))),
+    this.inputCountDiff.pipe(inputToValue(), map(n => ({countDiff: n}))),
     this.programmaticCommandSubject.asObservable()
   );
   counterState: Observable<CounterState> = this.counterCommands
