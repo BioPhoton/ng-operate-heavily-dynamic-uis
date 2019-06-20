@@ -1,5 +1,5 @@
 import {Component, OnDestroy} from '@angular/core';
-import {merge, NEVER, Subject, timer} from 'rxjs';
+import {merge, NEVER, Observable, Subject, timer} from 'rxjs';
 import {map, mapTo, switchMap, takeUntil, tap, withLatestFrom} from 'rxjs/operators';
 import {CounterState} from '../counter-state.interface';
 import {ElementIds} from '../element-ids.enum';
@@ -25,13 +25,13 @@ export class CounterComponent implements OnDestroy {
   btnStart: Subject<Event> = new Subject<Event>();
   btnPause: Subject<Event> = new Subject<Event>();
   btnSetTo: Subject<Event> = new Subject<Event>();
-  inputSetTo: Subject<number> = new Subject<number>();
+  inputSetTo: Subject<Event> = new Subject<Event>();
 
   // == INTERMEDIATE OBSERVABLES ============================================
-  lastSetToFromButtonClick = this.btnSetTo
+  lastSetToFromButtonClick: Observable<number> = this.btnSetTo
     .pipe(
       withLatestFrom(
-        this.inputSetTo.pipe(inputToValue()),
+        this.inputSetTo.pipe(inputToValue(null)),
         (btnSetTo, inputSetTo) => {
           return inputSetTo;
         }));
