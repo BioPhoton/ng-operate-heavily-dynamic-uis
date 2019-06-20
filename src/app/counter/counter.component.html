@@ -1,5 +1,5 @@
 <app-counter-view
-  [state]="facade.counterState"
+  [state]="facade.counterState | async"
   (btnStart)="facade.btnStart.next($event)"
   (btnPause)="facade.btnPause.next($event)"
   (btnSetTo)="facade.btnSetTo.next($event)"

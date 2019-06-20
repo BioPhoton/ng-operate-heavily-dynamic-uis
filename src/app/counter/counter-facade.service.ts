@@ -1,6 +1,6 @@
 import {Injectable, OnDestroy} from '@angular/core';
 import {merge, NEVER, Observable, Subject, timer} from 'rxjs';
-import {map, mapTo, switchMap, takeUntil, tap, withLatestFrom} from 'rxjs/operators';
+import {map, mapTo, scan, shareReplay, startWith, switchMap, takeUntil, tap, withLatestFrom} from 'rxjs/operators';
 import {CounterState} from '../counter-state.interface';
 import {INITIAL_COUNTER_STATE} from '../initial-counter-state';
 import {inputToValue} from '../operators/inputToValue';
@@ -15,7 +15,7 @@ export class CounterFacadeService implements OnDestroy {
   initialCounterState: CounterState = INITIAL_COUNTER_STATE;
   ngOnDestroySubject = new Subject();
 
-  counterState = {count: 0};
+  counterStateOld = {count: 0};
 
   // = BASE OBSERVABLES  ====================================================
   // == SOURCE OBSERVABLES ==================================================
@@ -33,11 +33,18 @@ export class CounterFacadeService implements OnDestroy {
         }));
 
   // === STATE OBSERVABLES ==================================================
-  counterCommands$: Observable<Command> = merge(
-    this.btnStart.pipe(mapTo({ isTicking: true })),
-    this.btnPause.pipe(mapTo({ isTicking: false })),
-    this.lastSetToFromButtonClick.pipe(map(n => ({ count: n })))
+  counterCommands: Observable<Command> = merge(
+    this.btnStart.pipe(mapTo({isTicking: true})),
+    this.btnPause.pipe(mapTo({isTicking: false})),
+    this.lastSetToFromButtonClick.pipe(map(n => ({count: n})))
   );
+  counterState: Observable<CounterState> = this.counterCommands
+    .pipe(
+      startWith(this.initialCounterState),
+      scan((counterState: CounterState, command): CounterState => ({...counterState, ...command})),
+      shareReplay(1)
+    );
+
   // == INTERMEDIATE OBSERVABLES ============================================
 
   // = SIDE EFFECTS =========================================================
@@ -50,24 +57,15 @@ export class CounterFacadeService implements OnDestroy {
         return isTicking ? timer(0, this.initialCounterState.tickSpeed) : NEVER;
       }),
       tap((_) => {
-        this.counterState = {...this.counterState, count: this.counterState.count + this.initialCounterState.countDiff};
+        this.counterStateOld = {...this.counterStateOld, count: this.counterStateOld.count + this.initialCounterState.countDiff};
       })
     );
 
-  setCountFromSetToClick = this.lastSetToFromButtonClick.pipe(
-    tap((next) => {
-      this.counterState = {...this.counterState, count: next};
-    })
-  );
-
   constructor() {
-    this.counterCommands$
-      .subscribe(console.log);
 
     // = SUBSCRIPTION =========================================================
     merge(
-      this.updateCounterFromTick,
-      this.setCountFromSetToClick
+      // this.updateCounterFromTick,
     )
       .pipe(
         takeUntil(
