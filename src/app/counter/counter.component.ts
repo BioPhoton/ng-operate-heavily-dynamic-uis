@@ -28,11 +28,11 @@ export class CounterComponent implements OnDestroy {
   inputSetTo: Subject<Event> = new Subject<Event>();
 
   // == INTERMEDIATE OBSERVABLES ============================================
-  lastSetToFromButtonClick: Observable<number> = this.btnSetTo
+  lastSetToFromButtonClick = this.btnSetTo
     .pipe(
       withLatestFrom(
-        this.inputSetTo.pipe(inputToValue(null)),
-        (btnSetTo, inputSetTo) => {
+        this.inputSetTo.pipe(inputToValue()),
+        (btnSetTo, inputSetTo: number) => {
           return inputSetTo;
         }));
 
