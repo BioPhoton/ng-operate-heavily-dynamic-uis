@@ -1,0 +1,69 @@
+<h1>Counter</h1>
+
+<div class="countdownHolder"
+  id="{{elementIds.TimerDisplay}}">
+  <span class="position" *ngFor="let d of (state$ | async).count | toArray">
+    <span class="digit static">
+      {{d}}
+    </span>
+  </span>
+</div>
+
+<button type="button"
+  id="{{elementIds.BtnStart}}"
+  (click)="btnStart.next($event)">
+  Start
+</button>
+
+<button type="button"
+  id="{{elementIds.BtnPause}}"
+  (click)="btnPause.next($event)">
+  Pause
+</button>
+
+<br/>
+
+<button type="button"
+  id="{{elementIds.BtnSetTo}}"
+  (click)="btnSetTo.next($event)">
+  Set To
+</button>
+
+<input
+  id="{{elementIds.InputSetTo}}"
+  type="number" min=0
+  value="{{initialSetToValue$ | async}}"
+  (input)="inputSetTo.next($event)"/>
+
+<button type="button"
+  id="{{elementIds.BtnReset}}">
+  Reset
+</button>
+
+<br/>
+
+<button type="button"
+  id="{{elementIds.BtnUp}}">
+  Count Up
+</button>
+
+<button type="button"
+  id="{{elementIds.BtnDown}}">
+  Count Down
+</button>
+
+<br/>
+
+<label>
+  Tick Speed
+</label>
+<input id="{{elementIds.InputTickSpeed}}"
+  type="number" min=0
+  value="{{(state$ | async).tickSpeed}}"/>
+
+<label>
+  Count Diff
+</label>
+<input id="{{elementIds.InputCountDiff}}"
+  type="number" min=0
+  value="{{(state$ | async).countDiff}}"/>

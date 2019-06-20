@@ -6,7 +6,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 export class ToArrayPipe implements PipeTransform {
 
   transform(value: any): any[] {
-    return value !== null ? value.toString().split('') : [];
+    return value !== null && value !== undefined ? value.toString().split('') : [];
   }
 
 }

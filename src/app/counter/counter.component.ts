@@ -1,22 +1,22 @@
-import {Component, OnDestroy} from '@angular/core';
-import {merge, NEVER, Observable, Subject, timer} from 'rxjs';
-import {map, mapTo, switchMap, takeUntil, tap, withLatestFrom} from 'rxjs/operators';
+import {ChangeDetectionStrategy, Component, OnDestroy} from '@angular/core';
+import {merge, NEVER, Subject, timer} from 'rxjs';
+import {mapTo, switchMap, takeUntil, tap, withLatestFrom} from 'rxjs/operators';
 import {CounterState} from '../counter-state.interface';
-import {ElementIds} from '../element-ids.enum';
 import {INITIAL_COUNTER_STATE} from '../initial-counter-state';
 import {inputToValue} from '../operators/inputToValue';
 
 @Component({
   selector: 'app-counter',
   templateUrl: './counter.component.html',
-  styleUrls: ['./counter.component.scss']
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CounterComponent implements OnDestroy {
 
   // = CONSTANTS ============================================================
-  elementIds = ElementIds;
   initialCounterState: CounterState = INITIAL_COUNTER_STATE;
   ngOnDestroySubject = new Subject();
+
+  counterState = {count: 0};
 
   // = BASE OBSERVABLES  ====================================================
   // == SOURCE OBSERVABLES ==================================================
@@ -25,7 +25,7 @@ export class CounterComponent implements OnDestroy {
   btnStart: Subject<Event> = new Subject<Event>();
   btnPause: Subject<Event> = new Subject<Event>();
   btnSetTo: Subject<Event> = new Subject<Event>();
-  inputSetTo: Subject<Event> = new Subject<Event>();
+  inputSetTo: Subject<any> = new Subject<any>();
 
   // == INTERMEDIATE OBSERVABLES ============================================
   lastSetToFromButtonClick = this.btnSetTo
@@ -37,7 +37,6 @@ export class CounterComponent implements OnDestroy {
         }));
 
   // = SIDE EFFECTS =========================================================
-  count = 0;
   updateCounterFromTick = merge(
     this.btnStart.pipe(mapTo(true)),
     this.btnPause.pipe(mapTo(false))
@@ -47,13 +46,13 @@ export class CounterComponent implements OnDestroy {
         return isTicking ? timer(0, this.initialCounterState.tickSpeed) : NEVER;
       }),
       tap((_) => {
-        this.count = this.count + this.initialCounterState.countDiff;
+        this.counterState = {...this.counterState, count: this.counterState.count + this.initialCounterState.countDiff};
       })
     );
 
   setCountFromSetToClick = this.lastSetToFromButtonClick.pipe(
     tap((next) => {
-      this.count = next;
+      this.counterState = {...this.counterState, count: next};
     })
   );
 

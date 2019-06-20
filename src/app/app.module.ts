@@ -7,13 +7,15 @@ import { AppComponent } from './app.component';
 import { CounterComponent } from './counter/counter.component';
 import {InputToValuePipe} from './input-to-value.pipe';
 import { ToArrayPipe } from './to-array.pipe';
+import { CounterViewComponent } from './counter/counter-view/counter-view.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     CounterComponent,
     ToArrayPipe,
-    InputToValuePipe
+    InputToValuePipe,
+    CounterViewComponent
   ],
   imports: [
     BrowserModule,
