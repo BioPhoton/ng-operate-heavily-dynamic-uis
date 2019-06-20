@@ -1,6 +1,6 @@
 import {Component, OnDestroy} from '@angular/core';
-import {interval, merge, NEVER, Subject, Subscription, timer} from 'rxjs';
-import {mapTo, scan, switchMap} from 'rxjs/operators';
+import {merge, NEVER, Subject, Subscription, timer} from 'rxjs';
+import {mapTo, scan, switchMap, withLatestFrom} from 'rxjs/operators';
 
 interface CounterState {
   isTicking: boolean;
@@ -43,37 +43,48 @@ export class CounterComponent implements OnDestroy {
   btnStart: Subject<Event> = new Subject<Event>();
   btnPause: Subject<Event> = new Subject<Event>();
   btnSetTo: Subject<Event> = new Subject<Event>();
-  inputSetTo: Subject<Event> = new Subject<Event>();
+  inputSetTo: Subject<number> = new Subject<number>();
 
-  subscription: Subscription;
+  lastSetToFromButtonClick = this.btnSetTo.pipe(withLatestFrom(this.inputSetTo, (btnSetTo, inputSetTo) => {
+    return inputSetTo;
+  }));
+
+  subscriptions: Subscription[] = [];
   count = 0;
 
   constructor() {
-    this.subscription = merge(
+    this.subscriptions.push(merge(
       this.btnStart.pipe(mapTo(true)),
       this.btnPause.pipe(mapTo(false))
-    )
-      .pipe(
-        switchMap((isTicking) => {
-          return isTicking ? timer(0, this.initialCounterState.tickSpeed) : NEVER;
-        }),
-        scan((acc, _) => {
-          return ++acc;
-        }, this.count)
       )
-      .subscribe(
-        (next) => {
+        .pipe(
+          switchMap((isTicking) => {
+            return isTicking ? timer(0, this.initialCounterState.tickSpeed) : NEVER;
+          })
+        )
+        .subscribe(
+          (next) => {
+            this.count = this.count + this.initialCounterState.countDiff;
+          }
+        )
+    );
+
+    this.subscriptions
+      .push(this.lastSetToFromButtonClick
+        .subscribe((next) => {
           this.count = next;
-        }
+        })
       );
   }
 
   ngOnDestroy(): void {
-    this.subscription.unsubscribe();
+    this.subscriptions.forEach((subscription) => {
+      subscription.unsubscribe();
+    });
   }
 
   getInputValue = (event: HTMLInputElement): number => {
     return parseInt(event['target'].value, 10);
-  };
+  }
 
 }
