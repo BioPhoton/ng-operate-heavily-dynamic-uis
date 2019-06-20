@@ -36,19 +36,22 @@
   (input)="inputSetTo.next($event)"/>
 
 <button type="button"
-  id="{{elementIds.BtnReset}}">
+  id="{{elementIds.BtnReset}}"
+  (click)="btnReset.next($event)">
   Reset
 </button>
 
 <br/>
 
 <button type="button"
-  id="{{elementIds.BtnUp}}">
+  id="{{elementIds.BtnUp}}"
+  (click)="btnUp.next($event)">
   Count Up
 </button>
 
 <button type="button"
-  id="{{elementIds.BtnDown}}">
+  id="{{elementIds.BtnDown}}"
+  (click)="btnDown.next($event)">
   Count Down
 </button>
 
@@ -59,11 +62,13 @@
 </label>
 <input id="{{elementIds.InputTickSpeed}}"
   type="number" min=0
-  value="{{(state$ | async).tickSpeed}}"/>
+  value="{{(state$ | async).tickSpeed}}"
+  (input)="inputTickSpeed.next($event)"/>
 
 <label>
   Count Diff
 </label>
 <input id="{{elementIds.InputCountDiff}}"
   type="number" min=0
-  value="{{(state$ | async).countDiff}}"/>
+  value="{{(state$ | async).countDiff}}"
+  (input)="inputCountDiff.next($event)"/>

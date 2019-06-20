@@ -17,13 +17,13 @@ export class CounterFacadeService implements OnDestroy {
   initialCounterState: CounterState = INITIAL_COUNTER_STATE;
   ngOnDestroySubject = new Subject();
 
-  counterStateOld = {count: 0};
-
   // = BASE OBSERVABLES  ====================================================
   // == SOURCE OBSERVABLES ==================================================
   // === INTERACTION OBSERVABLES ============================================
   btnStart: Subject<Event> = new Subject<Event>();
   btnPause: Subject<Event> = new Subject<Event>();
+  btnUp: Subject<Event> = new Subject<Event>();
+  btnDown: Subject<Event> = new Subject<Event>();
   btnSetTo: Subject<Event> = new Subject<Event>();
   inputSetTo: Subject<any> = new Subject<any>();
   lastSetToFromButtonClick = this.btnSetTo
@@ -40,6 +40,8 @@ export class CounterFacadeService implements OnDestroy {
     this.btnStart.pipe(mapTo({isTicking: true})),
     this.btnPause.pipe(mapTo({isTicking: false})),
     this.lastSetToFromButtonClick.pipe(map(n => ({count: n}))),
+    this.btnUp.pipe(mapTo({ countUp: true })),
+    this.btnDown.pipe(mapTo({ countUp: false })),
     this.programmaticCommandSubject.asObservable()
   );
   counterState: Observable<CounterState> = this.counterCommands
@@ -66,8 +68,9 @@ export class CounterFacadeService implements OnDestroy {
   updateCounterFromTick = this.intervalTick$
     .pipe(
       withLatestFrom(this.counterState, (_, s) => s),
-      tap((state) => {
-        this.programmaticCommandSubject.next({ count: state.count + state.countDiff });
+      tap(({count, countDiff, countUp}) => {
+        const diff = countDiff * (countUp ? 1 : -1);
+        this.programmaticCommandSubject.next({ count: count + diff });
       })
     );
 
