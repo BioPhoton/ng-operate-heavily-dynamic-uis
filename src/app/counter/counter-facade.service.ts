@@ -28,6 +28,7 @@ export class CounterFacadeService implements OnDestroy {
   inputSetTo: Subject<any> = new Subject<any>();
   inputTickSpeed: Subject<Event> = new Subject<Event>();
   inputCountDiff: Subject<Event> = new Subject<Event>();
+  btnReset: Subject<Event> = new Subject<Event>();
 
   lastSetToFromButtonClick = this.btnSetTo
     .pipe(
@@ -47,6 +48,7 @@ export class CounterFacadeService implements OnDestroy {
     this.btnDown.pipe(mapTo({ countUp: false })),
     this.inputTickSpeed.pipe(inputToValue(), map(n => ({ tickSpeed: n }))),
     this.inputCountDiff.pipe(inputToValue(), map(n => ({countDiff: n}))),
+    this.btnReset.pipe(mapTo({...this.initialCounterState})),
     this.programmaticCommandSubject.asObservable()
   );
   counterState: Observable<CounterState> = this.counterCommands
@@ -60,7 +62,7 @@ export class CounterFacadeService implements OnDestroy {
 
   // = SIDE EFFECTS =========================================================
   isTicking = this.counterState.pipe(selectDistinctState<CounterState, boolean>(CounterStateKeys.isTicking));
-  tickSpeed = this.counterState.pipe(selectDistinctState<CounterState, boolean>(CounterStateKeys.tickSpeed));
+  tickSpeed = this.counterState.pipe(selectDistinctState<CounterState, number>(CounterStateKeys.tickSpeed));
 
   intervalTick$ =  combineLatest(this.isTicking, this.tickSpeed)
     .pipe(
