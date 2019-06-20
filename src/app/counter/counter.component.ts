@@ -60,7 +60,7 @@ export class CounterComponent implements OnDestroy {
         )
           .subscribe(
             (next) => {
-              this.count = next;
+              this.count = this.count + this.initialCounterState.countDiff;
             }
           );
   }
