@@ -26,6 +26,8 @@ export class CounterFacadeService implements OnDestroy {
   btnDown: Subject<Event> = new Subject<Event>();
   btnSetTo: Subject<Event> = new Subject<Event>();
   inputSetTo: Subject<any> = new Subject<any>();
+  inputTickSpeed: Subject<Event> = new Subject<Event>();
+
   lastSetToFromButtonClick = this.btnSetTo
     .pipe(
       withLatestFrom(
@@ -42,6 +44,7 @@ export class CounterFacadeService implements OnDestroy {
     this.lastSetToFromButtonClick.pipe(map(n => ({count: n}))),
     this.btnUp.pipe(mapTo({ countUp: true })),
     this.btnDown.pipe(mapTo({ countUp: false })),
+    this.inputTickSpeed.pipe(inputToValue(), map(n => ({ tickSpeed: n }))),
     this.programmaticCommandSubject.asObservable()
   );
   counterState: Observable<CounterState> = this.counterCommands
@@ -54,12 +57,13 @@ export class CounterFacadeService implements OnDestroy {
   // == INTERMEDIATE OBSERVABLES ============================================
 
   // = SIDE EFFECTS =========================================================
-  isTicking$ = this.counterState.pipe(selectDistinctState<CounterState, boolean>(CounterStateKeys.isTicking));
+  isTicking = this.counterState.pipe(selectDistinctState<CounterState, boolean>(CounterStateKeys.isTicking));
+  tickSpeed = this.counterState.pipe(selectDistinctState<CounterState, boolean>(CounterStateKeys.tickSpeed));
 
-  intervalTick$ =  this.isTicking$
+  intervalTick$ =  combineLatest(this.isTicking, this.tickSpeed)
     .pipe(
-      switchMap((isTicking) => {
-        return isTicking ? timer(0, this.initialCounterState.tickSpeed) : NEVER;
+      switchMap(([isTicking, tickSpeed]) => {
+        return isTicking ? timer(0, tickSpeed) : NEVER;
       })
     );
 
