@@ -1,9 +1,10 @@
 import {Injectable, OnDestroy} from '@angular/core';
-import {merge, NEVER, Subject, timer} from 'rxjs';
-import {mapTo, switchMap, takeUntil, tap, withLatestFrom} from 'rxjs/operators';
+import {merge, NEVER, Observable, Subject, timer} from 'rxjs';
+import {map, mapTo, switchMap, takeUntil, tap, withLatestFrom} from 'rxjs/operators';
 import {CounterState} from '../counter-state.interface';
 import {INITIAL_COUNTER_STATE} from '../initial-counter-state';
 import {inputToValue} from '../operators/inputToValue';
+import {Command} from './command.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -18,14 +19,11 @@ export class CounterFacadeService implements OnDestroy {
 
   // = BASE OBSERVABLES  ====================================================
   // == SOURCE OBSERVABLES ==================================================
-  // === STATE OBSERVABLES ==================================================
   // === INTERACTION OBSERVABLES ============================================
   btnStart: Subject<Event> = new Subject<Event>();
   btnPause: Subject<Event> = new Subject<Event>();
   btnSetTo: Subject<Event> = new Subject<Event>();
   inputSetTo: Subject<any> = new Subject<any>();
-
-  // == INTERMEDIATE OBSERVABLES ============================================
   lastSetToFromButtonClick = this.btnSetTo
     .pipe(
       withLatestFrom(
@@ -33,6 +31,14 @@ export class CounterFacadeService implements OnDestroy {
         (btnSetTo, inputSetTo: number) => {
           return inputSetTo;
         }));
+
+  // === STATE OBSERVABLES ==================================================
+  counterCommands$: Observable<Command> = merge(
+    this.btnStart.pipe(mapTo({ isTicking: true })),
+    this.btnPause.pipe(mapTo({ isTicking: false })),
+    this.lastSetToFromButtonClick.pipe(map(n => ({ count: n })))
+  );
+  // == INTERMEDIATE OBSERVABLES ============================================
 
   // = SIDE EFFECTS =========================================================
   updateCounterFromTick = merge(
@@ -55,6 +61,9 @@ export class CounterFacadeService implements OnDestroy {
   );
 
   constructor() {
+    this.counterCommands$
+      .subscribe(console.log);
+
     // = SUBSCRIPTION =========================================================
     merge(
       this.updateCounterFromTick,
