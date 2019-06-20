@@ -1,5 +1,5 @@
 # Reactive micro architecture
 
-create display only component
+create facade service
 
-ng generate component counter/counter-view => changeDetectionPUSH
+ng generate service counter/counterFacade

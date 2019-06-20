@@ -1,8 +1,8 @@
 <app-counter-view
-  [state]="counterState"
-  (btnStart)="btnStart.next($event)"
-  (btnPause)="btnPause.next($event)"
-  (btnSetTo)="btnSetTo.next($event)"
-  (inputSetTo)="inputSetTo.next($event)"
+  [state]="facade.counterState"
+  (btnStart)="facade.btnStart.next($event)"
+  (btnPause)="facade.btnPause.next($event)"
+  (btnSetTo)="facade.btnSetTo.next($event)"
+  (inputSetTo)="facade.inputSetTo.next($event)"
 >
 </app-counter-view>
